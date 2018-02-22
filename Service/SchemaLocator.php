@@ -28,14 +28,27 @@ class SchemaLocator
     public function locateFromBundlesAndConfiguration(array $bundles)
     {
         $schemas = $this->locateFromBundles($bundles);
-
-        $path = $this->configuration['paths']['schemaDir'].'/schema.xml';
-        if (file_exists($path)) {
-            $schema = new \SplFileInfo($path);
-            $schemas[(string) $schema] = array(null, $schema);
-        }
+        $schemas = array_merge($schemas, $this->locateFromSchemaDir());
 
         return $schemas;
+    }
+
+    protected function locateFromSchemaDir()
+    {
+        $finalSchemas = array();
+
+        if (is_dir($dir = $this->configuration['paths']['schemaDir'])) {
+            $finder  = new Finder();
+            $schemas = $finder->files()->name('*schema.xml')->followLinks()->in($dir);
+
+            if (iterator_count($schemas)) {
+                foreach ($schemas as $schema) {
+                    $finalSchemas[(string) $schema] = array(null, $schema);
+                }
+            }
+        }
+
+        return $finalSchemas;
     }
 
     public function locateFromBundles(array $bundles)
